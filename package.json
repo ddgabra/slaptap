@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "python3 -m http.server 5173",
-    "build": "node scripts/check-app.mjs",
+    "build": "node scripts/check-app.mjs && node scripts/build.mjs",
     "preview": "python3 -m http.server 4173"
   },
   "dependencies": {},
