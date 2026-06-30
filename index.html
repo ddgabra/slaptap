@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>type rush</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <main class="app" id="app">
+      <header class="topbar">
+        <div class="brand">type rush</div>
+        <nav class="modes" aria-label="test duration">
+          <button data-duration="15">15s</button>
+          <button data-duration="30">30s</button>
+          <button data-duration="60">60s</button>
+        </nav>
+        <button class="restart" id="restartButton">restart</button>
+      </header>
+      <section class="testPanel" id="testPanel">
+        <div class="startScreen" id="startScreen">
+          <h1>type rush</h1>
+          <button class="primary" id="startButton">start typing</button>
+        </div>
+        <div class="liveStats">
+          <div class="stat"><span>time</span><strong id="timeStat">30</strong></div>
+          <div class="stat"><span>wpm</span><strong id="wpmStat">0</strong></div>
+          <div class="stat"><span>accuracy</span><strong id="accuracyStat">100%</strong></div>
+        </div>
+        <div class="words" id="words" aria-label="typing test text"></div>
+        <textarea id="typingInput" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="type the displayed words here"></textarea>
+        <p class="hint">timer starts on your first key press · tab or esc restarts</p>
+      </section>
+      <section class="results hidden" id="results" aria-live="polite"></section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
