@@ -8,6 +8,7 @@ const dist = `${root}/dist`;
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
 await cp(`${root}/index.html`, `${dist}/index.html`);
+await cp(`${root}/index.html`, `${dist}/404.html`);
 await cp(`${root}/src`, `${dist}/src`, { recursive: true });
 
 console.log('built static app to dist');
