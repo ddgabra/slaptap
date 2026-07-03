@@ -1,214 +1,55 @@
-const PHRASES = [
-  'the sun is warm', 'we can go fast', 'i like this game', 'type the words', 'run to the park',
-  'make it simple', 'keep moving forward', 'this feels easy', 'you are doing well', 'nice and smooth',
-  'the day is bright', 'go one more time', 'quick little test', 'my hands feel fast', 'just keep typing',
-  'light work today', 'soft keys click', 'easy words flow', 'beat your score', 'calm and focused',
-  'the road is clear', 'start again soon', 'smooth typing speed', 'no stress here', 'faster every round',
-  'fresh pages turn', 'small steps matter', 'green hills rise', 'bright ideas bloom', 'quiet minds focus',
-  'steady hands move', 'clear thoughts land', 'daily practice wins', 'gentle rain falls', 'happy cats nap',
-  'brave birds sing', 'tiny boats drift', 'golden lights glow', 'cool winds whisper', 'simple goals grow',
-  'kind words help', 'open doors wait', 'blue skies shine', 'silver stars sparkle', 'warm coffee waits',
-  'quick foxes leap', 'slow rivers bend', 'new paths appear', 'bold plans start', 'clean desks help',
-  'music fills rooms', 'garden flowers open', 'paper planes glide', 'morning light returns', 'evening clouds fade',
-  'soft blankets warm', 'little wins count', 'focused minds race', 'happy feet dance', 'quiet lakes mirror',
-  'fresh bread smells', 'smooth roads curve', 'bright screens glow', 'gentle waves roll', 'fast fingers fly',
-  'strong roots hold', 'wild horses run', 'busy bees gather', 'purple flowers sway', 'orange leaves fall',
-  'clean water flows', 'friendly faces smile', 'steady rhythm builds', 'curious minds learn', 'clever ideas grow',
-  'brisk walks refresh', 'simple maps guide', 'patient work pays', 'sunny rooms shine', 'cozy fires crackle',
-  'round stones skip', 'tall trees shade', 'wide fields stretch', 'sweet apples crunch', 'silver bells ring',
-  'fresh snow glows', 'quiet streets rest', 'busy trains hum', 'bright kites soar', 'soft pillows wait',
-  'green gardens thrive', 'warm socks fit', 'clear bells chime', 'smooth pencils write', 'small birds flutter',
-  'happy dogs play', 'deep oceans shimmer', 'light clouds float', 'red roses open', 'blue doors swing',
-  'fast notes flow', 'calm breaths steady', 'young trees grow', 'old stories linger', 'bright mornings start',
-  'neat lines form', 'gentle smiles spread', 'fresh ideas spark', 'cool shadows move', 'warm sunlight dances',
-  'open windows breathe', 'simple songs repeat', 'quick thoughts settle', 'brave hearts rise', 'small sparks glow',
-  'soft voices carry', 'clean pages wait', 'green valleys echo', 'gold coins shine', 'bright rivers sparkle',
-  'steady clocks tick', 'clear answers arrive', 'happy moments last', 'focused typing wins', 'practice makes progress',
+const SPEED_PHRASE_CHUNKS = [
+  'the sun is warm','we can go fast','i like this game','type the words','run to the park','make it simple','keep moving forward','this feels easy','you are doing well','nice and smooth','the day is bright','go one more time','quick little test','my hands feel fast','just keep typing','light work today','soft keys click','easy words flow','beat your score','calm and focused','the road is clear','start again soon','smooth typing speed','no stress here','faster every round'
 ];
-
-const DURATIONS = [15, 30, 60];
-const MIN_TEXT_LENGTH = 1800;
-const STORAGE_KEY = 'type-rush-recent-scores';
-
-const state = {
-  duration: 30,
-  target: '',
-  status: 'ready',
-  startTime: 0,
-  interval: null,
-  timeout: null,
-};
-
-const app = document.querySelector('#app');
-const words = document.querySelector('#words');
-const input = document.querySelector('#typingInput');
-const startScreen = document.querySelector('#startScreen');
-const testPanel = document.querySelector('#testPanel');
-const results = document.querySelector('#results');
-const timeStat = document.querySelector('#timeStat');
-const wpmStat = document.querySelector('#wpmStat');
-const accuracyStat = document.querySelector('#accuracyStat');
-const restartButton = document.querySelector('#restartButton');
-const startButton = document.querySelector('#startButton');
-const modeButtons = [...document.querySelectorAll('[data-duration]')];
-
-function shuffle(items) {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
-  }
-  return copy;
-}
-
-function makeText(minLength = MIN_TEXT_LENGTH) {
-  const groups = [];
-  while (groups.join(' ').length < minLength) groups.push(shuffle(PHRASES).join(' '));
-  return groups.join(' ');
-}
-
-function countCharacters(value, target) {
-  let correct = 0;
-  let incorrect = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    if (value[index] === target[index]) correct += 1;
-    else incorrect += 1;
-  }
-  return { correct, incorrect, total: value.length };
-}
-
-function calculateStats(value, elapsedSeconds = state.duration) {
-  const counts = countCharacters(value, state.target);
-  const minutes = Math.max(elapsedSeconds / 60, 1 / 60);
-  return {
-    ...counts,
-    accuracy: counts.total ? Math.round((counts.correct / counts.total) * 100) : 100,
-    wpm: Math.round(counts.correct / 5 / minutes),
-    rawWpm: Math.round(counts.total / 5 / minutes),
-  };
-}
-
-function focusInput() {
-  requestAnimationFrame(() => input.focus({ preventScroll: true }));
-}
-
-function renderText() {
-  const visibleLength = Math.max(input.value.length + 360, 700);
-  const fragment = document.createDocumentFragment();
-  state.target.slice(0, visibleLength).split('').forEach((character, index) => {
-    const span = document.createElement('span');
-    span.className = 'char pending';
-    if (index < input.value.length) span.className = input.value[index] === character ? 'char correct' : 'char wrong';
-    if (index === input.value.length && state.status !== 'finished') span.className += ' current';
-    span.textContent = character === ' ' ? '\u00a0' : character;
-    fragment.append(span);
-  });
-  words.replaceChildren(fragment);
-}
-
-function updateModes() {
-  modeButtons.forEach((button) => {
-    const selected = Number(button.dataset.duration) === state.duration;
-    button.classList.toggle('active', selected);
-    button.disabled = state.status === 'running';
-  });
-}
-
-function updateStats() {
-  const elapsed = state.status === 'running' ? Math.min((Date.now() - state.startTime) / 1000, state.duration) : 0;
-  const remaining = state.status === 'running' ? Math.max(0, state.duration - elapsed) : state.duration;
-  const stats = calculateStats(input.value, elapsed || state.duration);
-  timeStat.textContent = String(Math.ceil(remaining));
-  wpmStat.textContent = String(stats.wpm);
-  accuracyStat.textContent = `${stats.accuracy}%`;
-}
-
-function saveScore(stats) {
-  const current = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  const next = [{ ...stats, duration: state.duration, createdAt: new Date().toISOString() }, ...current].slice(0, 5);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  return next;
-}
-
-function finishTest() {
-  if (state.status === 'finished') return;
-  clearInterval(state.interval);
-  clearTimeout(state.timeout);
-  state.status = 'finished';
-  input.disabled = true;
-  const stats = calculateStats(input.value, state.duration);
-  const recent = saveScore(stats);
-  testPanel.classList.add('hidden');
-  results.classList.remove('hidden');
-  results.innerHTML = `
-    <p class="eyebrow">test complete</p>
-    <h1>${stats.wpm} wpm</h1>
-    <div class="resultGrid">
-      ${resultStat('raw wpm', stats.rawWpm)}${resultStat('accuracy', `${stats.accuracy}%`)}
-      ${resultStat('correct', stats.correct)}${resultStat('incorrect', stats.incorrect)}
-      ${resultStat('typed', stats.total)}${resultStat('duration', `${state.duration}s`)}
-    </div>
-    <button class="primary" id="newTestButton">start new test</button>
-    ${recent.length > 1 ? `<p class="recent">recent best ${Math.max(...recent.map((score) => score.wpm))} wpm</p>` : ''}
-  `;
-  document.querySelector('#newTestButton').addEventListener('click', () => restart());
-  updateModes();
-}
-
-function resultStat(label, value) {
-  return `<div class="stat"><span>${label}</span><strong>${value}</strong></div>`;
-}
-
-function startTimer() {
-  state.status = 'running';
-  state.startTime = Date.now();
-  startScreen.classList.add('hidden');
-  state.interval = setInterval(() => {
-    updateStats();
-    if (Date.now() - state.startTime >= state.duration * 1000) finishTest();
-  }, 80);
-  state.timeout = setTimeout(finishTest, state.duration * 1000);
-  updateModes();
-}
-
-function restart(nextDuration = state.duration) {
-  clearInterval(state.interval);
-  clearTimeout(state.timeout);
-  state.duration = nextDuration;
-  state.target = makeText();
-  state.status = 'ready';
-  state.startTime = 0;
-  input.disabled = false;
-  input.value = '';
-  startScreen.classList.remove('hidden');
-  testPanel.classList.remove('hidden');
-  results.classList.add('hidden');
-  updateModes();
-  updateStats();
-  renderText();
-  focusInput();
-}
-
-function handleInput() {
-  if (state.status === 'finished') return;
-  input.value = input.value.toLowerCase().replace(/[^a-z\s]/g, '');
-  if (state.status === 'ready' && input.value.length > 0) startTimer();
-  if (input.value.length > state.target.length - 200) state.target = `${state.target} ${makeText(900)}`;
-  renderText();
-  updateStats();
-}
-
-input.addEventListener('input', handleInput);
-app.addEventListener('click', focusInput);
-restartButton.addEventListener('click', () => restart());
-startButton.addEventListener('click', focusInput);
-modeButtons.forEach((button) => button.addEventListener('click', () => restart(Number(button.dataset.duration))));
-window.addEventListener('keydown', (event) => {
-  if (event.key === 'Tab' || event.key === 'Escape') {
-    event.preventDefault();
-    restart();
-  }
-  if ([' ', 'PageDown', 'PageUp'].includes(event.key) && document.activeElement !== input) event.preventDefault();
-});
-
-restart(DURATIONS.includes(state.duration) ? state.duration : 30);
+const DURATIONS=[15,30,60,120], STUDY_LENGTHS=[0,60,180,300,600], HISTORY_KEY='slaptap-history-v1', SETTINGS_KEY='slaptap-settings-v1', MAX_HISTORY=100, MAX_FILE=18*1024*1024;
+const $=s=>document.querySelector(s), screen=$('#screen'), input=$('#typingInput'), modal=$('#modalRoot');
+const defaults={theme:'dark',sound:true,volume:.35,keyboard:true,nextKey:true,liveWpm:true,liveAccuracy:true,reducedMotion:false};
+let settings=load(SETTINGS_KEY,defaults), history=load(HISTORY_KEY,{version:1,runs:[]}), view='speed', pressed=new Set(), audio, session=null, study={raw:'',text:'',name:'pasted notes',type:'text',mode:'exact',length:0};
+function load(k,f){try{const v=JSON.parse(localStorage.getItem(k)||'null');return v&&typeof v==='object'?{...f,...v}:f}catch{return f}} function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch{return false}}
+function applyTheme(){document.documentElement.dataset.theme=settings.theme;document.documentElement.classList.toggle('reduced',settings.reducedMotion)} applyTheme();
+function shuffle(a){const c=[...a];for(let i=c.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[c[i],c[j]]=[c[j],c[i]]}return c}
+function speedText(min=9000){let out=[], last=''; while(out.join(' ').length<min){let group=shuffle(SPEED_PHRASE_CHUNKS); if(group[0]===last) group.push(group.shift()); out.push(...group); last=group[group.length-1]} return out.join(' ')}
+function simpleStudy(t){return normalize(t).toLowerCase().replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/[^a-z0-9\s\n]/g,' ').replace(/[ \t]+/g,' ').replace(/ *\n */g,'\n').trim()}
+function normalize(t){return t.replace(/\r\n?/g,'\n').replace(/[\t\f\v ]+/g,' ').replace(/ *\n */g,'\n').replace(/\n{3,}/g,'\n\n').trim()}
+function wordsOf(t){return (t.match(/\S+/g)||[])}
+function html(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function metric(l,v){return `<div class="stat"><span>${l}</span><strong>${v}</strong></div>`}
+function nav(){document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view))}
+function render(){nav(); if(view==='speed') renderSpeed(); if(view==='study') renderStudy(); if(view==='history') renderHistory()}
+function focusInput(){requestAnimationFrame(()=>input.focus({preventScroll:true}))}
+function startSpeed(d=30){begin({mode:'speed',target:speedText(),duration:d,label:`${d}s`,sourceName:''})}
+function begin(cfg){session=new TypingSession(cfg); renderRun(); focusInput()}
+class TypingSession{constructor({mode,target,duration,label,sourceName}){Object.assign(this,{mode,target,duration,label,sourceName,status:'ready',pos:0,typed:[],events:[],start:0,last:0,now:0,timer:null,samples:[],mistakes:[],saved:false,tab:false})} elapsed(){return this.start?(this.status==='finished'?this.now:(performance.now()-this.start))/1000:0} remaining(){return this.duration?Math.max(0,this.duration-this.elapsed()):0} stats(){return calc(this)} finish(){if(this.status==='finished')return;this.now=performance.now()-this.start;this.status='finished';clearInterval(this.timer);renderResults(this.stats())}}
+function calc(s){const elapsed=Math.max(s.elapsed(),.1), min=elapsed/60; let correct=0, incorrect=0; s.typed.forEach((c,i)=>c===s.target[i]?correct++:incorrect++); const evals=s.events.filter(e=>e.typed!=='Backspace'); const corrected=s.events.filter(e=>e.corrected).length; const uncorrected=incorrect; const intervals=evals.map(e=>e.delta).filter(n=>n>0); const avg=intervals.reduce((a,b)=>a+b,0)/(intervals.length||1); const mean=avg, variance=intervals.reduce((a,b)=>a+(b-mean)**2,0)/(intervals.length||1); const consistency=Math.max(0,Math.round(100-Math.sqrt(variance)/(mean||1)*45)); const longH=intervals.filter(n=>n>Math.max(900,avg*2.4)).length; const wordsDone=wordsOf(s.target.slice(0,s.pos)).length; return {mode:s.mode,sourceName:s.sourceName,label:s.label,wpm:Math.round(correct/5/min),rawWpm:Math.round(s.typed.length/5/min),accuracy:evals.length?Math.round(evals.filter(e=>e.correct).length/evals.length*100):100,correct,incorrect,correctedErrors:corrected,uncorrectedErrors:uncorrected,totalKeyPresses:s.events.length,totalTypedCharacters:s.typed.length,duration:Math.round(elapsed),wordsCompleted:wordsDone,averageCharacterInterval:Math.round(avg),fastestShortBurst:burst(evals),longHesitations:longH,consistency,graph:s.samples,difficultWords:difficultWords(s,avg),slowestCharacters:slowChars(s),mistypedCharacters:mistyped(s),observation:observe(s)}}
+function burst(e){let best=0; for(let i=0;i<e.length;i++){let j=i+4;if(e[j]) best=Math.max(best,Math.round(5/(((e[j].time-e[i].time)||1)/1000)/5*60))} return best}
+function slowChars(s){const m={}; s.events.filter(e=>e.typed!=='Backspace'&&e.expected).forEach(e=>{(m[e.expected]??={c:0,t:0}).c++;m[e.expected].t+=e.delta});return Object.entries(m).filter(([,v])=>v.c>1||Object.keys(m).length<3).map(([k,v])=>({label:k==='\n'?'enter':k,value:Math.round(v.t/v.c)})).sort((a,b)=>b.value-a.value).slice(0,5)}
+function mistyped(s){const m={}; s.events.filter(e=>!e.correct&&e.typed!=='Backspace').forEach(e=>m[e.expected]=(m[e.expected]||0)+1);return Object.entries(m).map(([label,value])=>({label:label==='\n'?'enter':label,value})).sort((a,b)=>b.value-a.value).slice(0,5)}
+function difficultWords(s,avg){const chunks=s.target.matchAll(/\S+/g), arr=[]; for(const w of chunks){const a=w.index,b=a+w[0].length, ev=s.events.filter(e=>e.pos>=a&&e.pos<b); if(!ev.length)continue; const mistakes=ev.filter(e=>!e.correct).length, backs=s.events.filter(e=>e.typed==='Backspace'&&e.pos>=a&&e.pos<=b).length, time=ev.reduce((x,e)=>x+Math.min(e.delta,3000),0); arr.push({label:w[0].slice(0,28),value:Math.round(time/w[0].length + mistakes*avg + backs*avg*.7)})} return arr.sort((a,b)=>b.value-a.value).slice(0,5)}
+function observe(s){const m=mistyped(s)[0], dw=difficultWords(s,250)[0]; if(m)return`most errors involved “${m.label}”`; if(dw&&dw.label.length>8)return'you slowed down most on longer words'; if(s.target.includes('\n'))return'paragraph breaks created natural pauses'; return'your speed stayed very consistent'}
+function keyChar(e){if(e.ctrlKey||e.metaKey||e.altKey||['Shift','Control','Alt','Meta','CapsLock'].includes(e.key))return null; if(e.key==='Enter')return'\n'; if(e.key==='Tab')return'\t'; if(e.key.length===1)return e.key; return null}
+window.addEventListener('keydown',e=>{pressed.add(e.code); updateKeys(); if(e.key==='Escape'){if(modal.innerHTML)closeSettings();return} if(!session||session.status==='finished')return; if(e.key==='Tab'){session.tab=true; e.preventDefault(); return} if(session.tab&&e.key==='Enter'){e.preventDefault(); begin(session.mode==='speed'?{mode:'speed',target:speedText(),duration:session.duration,label:session.label,sourceName:''}:{mode:'study',target:study.text,duration:study.length,label:study.length?`${study.length}s`:'full document',sourceName:study.name}); return} if([' ','PageDown','PageUp'].includes(e.key))e.preventDefault(); if(e.repeat)return; const ch=keyChar(e); if(e.key==='Backspace'){typeBack(); play('backspace'); e.preventDefault()} else if(ch){typeIn(ch); play(ch===' '?'space':ch==='\n'?'enter':'char'); e.preventDefault()}});
+window.addEventListener('keyup',e=>{pressed.delete(e.code); updateKeys()}); window.addEventListener('blur',()=>{pressed.clear();updateKeys()}); input.addEventListener('input',()=>{input.value=''});
+function typeIn(ch){const s=session;if(!s||s.status==='finished')return; if(s.status==='ready'){s.status='running';s.start=performance.now();s.last=s.start;s.timer=setInterval(tick,200)} const now=performance.now(), expected=s.target[s.pos]||''; const correct=ch===expected; s.typed.push(ch); s.events.push({time:now-s.start,expected,typed:ch,pos:s.pos,correct,corrected:false,word:wordAt(s.target,s.pos),delta:now-s.last}); if(!correct)s.mistakes.push({time:(now-s.start)/1000,pos:s.pos}); s.pos++; s.last=now; if(s.mode==='speed'&&s.target.length-s.pos<800)s.target+=' '+speedText(2500); if((!s.duration&&s.pos>=s.target.length)||(s.duration&&s.elapsed()>=s.duration))s.finish(); else {renderText();liveStats();}}
+function typeBack(){const s=session;if(!s||!s.typed.length||s.status==='finished')return; const now=performance.now(); s.pos--; s.typed.pop(); for(let i=s.events.length-1;i>=0;i--)if(s.events[i].pos===s.pos&&!s.events[i].correct){s.events[i].corrected=true;break} s.events.push({time:s.start?now-s.start:0,expected:s.target[s.pos],typed:'Backspace',pos:s.pos,correct:true,corrected:false,word:wordAt(s.target,s.pos),delta:s.start?now-s.last:0}); s.last=now; renderText();liveStats()}
+function wordAt(t,p){const l=t.lastIndexOf(' ',p-1)+1, r=t.indexOf(' ',p);return t.slice(l,r<0?t.length:r).replace(/\n/g,' ')}
+function tick(){if(!session)return; liveStats(); const e=session.elapsed(); if(Math.floor(e)>session.samples.length){const recent=session.events.filter(x=>x.typed!=='Backspace'&&x.time/1000>e-5), c=recent.filter(x=>x.correct).length; session.samples.push({time:Math.floor(e),wpm:Math.round(c/5/(Math.min(5,e)/60)),mistakes:session.mistakes.filter(m=>m.time>e-1&&m.time<=e).length})} if(session.duration&&e>=session.duration)session.finish()}
+function renderSpeed(){screen.innerHTML=`<section class="panel"><div class="hero"><p class="eyebrow">speed mode</p><h1>Fast words. Honest scores.</h1><p>Easy shuffled SlapTap phrases keep momentum high while WPM and accuracy stay real.</p></div><div class="choices">${DURATIONS.map(d=>`<button class="pill ${d===30?'active':''}" data-speed="${d}">${d}s</button>`).join('')}</div><button class="primary" id="goSpeed">Start 30s speed run</button></section>`; screen.querySelectorAll('[data-speed]').forEach(b=>b.onclick=()=>{screen.querySelectorAll('[data-speed]').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('#goSpeed').textContent=`Start ${b.dataset.speed}s speed run`}); $('#goSpeed').onclick=()=>startSpeed(Number(screen.querySelector('[data-speed].active').dataset.speed))}
+function renderRun(){screen.innerHTML=`<section class="run"><div class="liveStats"><div class="stat"><span>time</span><strong id="timeStat"></strong></div>${settings.liveWpm?'<div class="stat"><span>wpm</span><strong id="wpmStat"></strong></div>':''}${settings.liveAccuracy?'<div class="stat"><span>accuracy</span><strong id="accuracyStat"></strong></div>':''}</div><div class="viewport" id="viewport"><div class="words" id="words"></div></div><p class="hint">timer starts on first key · tab then enter restarts · esc closes settings</p><div id="keyboardHost"></div></section>`; $('#viewport').onclick=focusInput; renderText(); liveStats(); renderKeyboard(); focusInput()}
+function renderText(){const w=$('#words'); if(!w||!session)return; const start=Math.max(0,session.pos-650), end=Math.min(session.target.length,session.pos+1200); let out=''; for(let i=start;i<end;i++){const t=session.target[i], typed=session.typed[i], cls=i<session.pos?(typed===t?'correct':'wrong'):'pending'; out+=`<span class="char ${cls} ${i===session.pos?'current':''}" data-i="${i}">${html(t===' '?'\u00a0':t==='\n'?'↵\n':t)}</span>`} w.innerHTML=out; requestAnimationFrame(()=>{const cur=w.querySelector('.current'), vp=$('#viewport'); if(cur&&vp){const line=parseFloat(getComputedStyle(w).lineHeight)||42, top=cur.offsetTop, target=Math.max(0,top-line); w.style.transform=`translateY(${-target}px)`}})}
+function liveStats(){if(!session)return; const st=session.stats(); $('#timeStat')&&($('#timeStat').textContent=session.duration?Math.ceil(session.remaining()):session.status==='running'?`${Math.floor(session.elapsed())}s`:'full'); $('#wpmStat')&&($('#wpmStat').textContent=st.wpm); $('#accuracyStat')&&($('#accuracyStat').textContent=`${st.accuracy}%`)}
+function renderKeyboard(){const h=$('#keyboardHost'); if(!h)return; if(!settings.keyboard){h.innerHTML='<button class="ghost" id="showKb">show keyboard</button>'; $('#showKb').onclick=()=>{settings.keyboard=true;save(SETTINGS_KEY,settings);renderKeyboard()};return} const rows=[['Backquote','Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9','Digit0','Minus','Equal','Backspace'],['Tab','KeyQ','KeyW','KeyE','KeyR','KeyT','KeyY','KeyU','KeyI','KeyO','KeyP','BracketLeft','BracketRight','Backslash'],['CapsLock','KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon','Quote','Enter'],['ShiftLeft','KeyZ','KeyX','KeyC','KeyV','KeyB','KeyN','KeyM','Comma','Period','Slash','ShiftRight'],['Space']]; const labels={Backspace:'⌫',Tab:'tab',CapsLock:'caps',Enter:'enter',ShiftLeft:'shift',ShiftRight:'shift',Space:'space'}; h.innerHTML=`<div class="kbTop"><span>visual keyboard</span><button class="ghost" id="hideKb">minimize</button></div><div class="keyboard">${rows.map(r=>`<div class="kbRow">${r.map(c=>`<kbd data-code="${c}" class="${c}">${labels[c]||c.replace('Key','').replace('Digit','')}</kbd>`).join('')}</div>`).join('')}</div>`; $('#hideKb').onclick=()=>{settings.keyboard=false;save(SETTINGS_KEY,settings);renderKeyboard()}; updateKeys()}
+function updateKeys(){document.querySelectorAll('kbd').forEach(k=>k.classList.toggle('down',pressed.has(k.dataset.code))); if(settings.nextKey&&session){const ch=session.target[session.pos]; const code=ch===' '?'Space':ch==='\n'?'Enter':/[a-zA-Z]/.test(ch)?`Key${ch.toUpperCase()}`:/[0-9]/.test(ch)?`Digit${ch}`:''; document.querySelectorAll('kbd').forEach(k=>k.classList.toggle('next',k.dataset.code===code))}}
+function renderStudy(){const text=study.raw; const wc=wordsOf(study.text||text).length; screen.innerHTML=`<section class="panel study"><h1>Study mode</h1><label class="drop" id="drop">Drop notes here<input id="file" type="file" accept=".txt,.md,.docx,.pdf,.html,.csv,.json,text/*,application/pdf"/></label><label>Paste notes<textarea id="paste" class="paste" placeholder="Paste class notes here...">${html(study.raw)}</textarea></label><div class="options"><label><input type="radio" name="smode" value="exact" ${study.mode==='exact'?'checked':''}/> Exact</label><label><input type="radio" name="smode" value="simple" ${study.mode==='simple'?'checked':''}/> Simple study</label><select id="studyLen">${STUDY_LENGTHS.map(x=>`<option value="${x}" ${study.length===x?'selected':''}>${x?x/60+' minute'+(x>60?'s':''):'Full document'}</option>`).join('')}</select></div><div class="preview"><strong>${html(study.name)}</strong> · ${html(study.type)} · ${wc} words · ${(study.text||text).length} chars · ~${Math.max(1,Math.round(wc/200))} min<p>${html((study.text||text).slice(0,420))}</p></div><div class="actions"><button class="primary" id="startStudy" ${study.text?'':'disabled'}>Start studying</button><button class="ghost" id="clearStudy">Clear notes</button></div><p id="fileMsg" class="hint"></p></section>`; $('#paste').oninput=e=>setStudy(e.target.value,'pasted notes','text'); document.querySelectorAll('[name=smode]').forEach(r=>r.onchange=()=>{study.mode=r.value;setStudy(study.raw,study.name,study.type)}); $('#studyLen').onchange=e=>study.length=Number(e.target.value); $('#startStudy').onclick=()=>begin({mode:'study',target:study.text,duration:study.length,label:study.length?`${study.length}s`:'full document',sourceName:study.name}); $('#clearStudy').onclick=()=>{study={raw:'',text:'',name:'pasted notes',type:'text',mode:'exact',length:0};renderStudy()}; $('#file').onchange=e=>e.target.files[0]&&readFile(e.target.files[0]); $('#drop').ondragover=e=>{e.preventDefault();$('#drop').classList.add('over')}; $('#drop').ondrop=e=>{e.preventDefault();$('#drop').classList.remove('over');readFile(e.dataTransfer.files[0])}}
+function setStudy(raw,name,type){study.raw=normalize(raw);study.name=name;study.type=type;study.text=study.mode==='simple'?simpleStudy(study.raw):study.raw; renderStudy()}
+async function readFile(f){const msg=()=>$('#fileMsg'); if(!f)return; if(f.size>MAX_FILE){msg().textContent='That file is too large for local browser extraction. Please paste a smaller section.';return} try{let ext=f.name.split('.').pop().toLowerCase(), txt=''; if(['txt','md','csv','html','json'].includes(ext)){txt=await f.text(); if(ext==='html')txt=new DOMParser().parseFromString(txt,'text/html').body.textContent||''; if(ext==='json')txt=JSON.stringify(JSON.parse(txt),null,2)} else if(ext==='docx') txt=await extractDocx(f); else if(ext==='pdf') txt=await extractPdf(f); else {msg().textContent='Unsupported file type. Please copy and paste the text.';return} if(!normalize(txt)){msg().textContent='No extractable text found. Image-only or empty files may need copy and paste.';return} setStudy(txt,f.name,ext)}catch(err){msg().textContent='Text could not be extracted locally from this file. Try copy and paste instead.'}}
+async function extractDocx(f){const buf=await f.arrayBuffer(), bytes=new Uint8Array(buf), text=new TextDecoder().decode(bytes); const m=[...text.matchAll(/word\/document\.xml[\s\S]*?<w:t[^>]*>(.*?)<\/w:t>/g)].map(x=>x[1]); if(m.length)return m.join(' ').replace(/&lt;/g,'<').replace(/&amp;/g,'&'); throw Error('docx extraction limited without optional mammoth dependency')}
+async function extractPdf(f){const raw=new TextDecoder('latin1').decode(await f.arrayBuffer()); return [...raw.matchAll(/\(([^()]{2,})\)\s*Tj/g)].map(m=>m[1].replace(/\\([()\\])/g,'$1')).join(' ')}
+function graph(samples,avg){if(!samples.length)return'<p>No graph samples were recorded.</p>'; const w=620,h=180,max=Math.max(20,...samples.map(p=>p.wpm),avg), pts=samples.map((p,i)=>`${(i/(samples.length-1||1))*w},${h-(p.wpm/max)*(h-20)-10}`).join(' '), ay=h-(avg/max)*(h-20)-10; return `<svg class="graph" viewBox="0 0 ${w} ${h}" role="img" aria-label="Speed over time graph averaging ${avg} WPM"><line x1="0" x2="${w}" y1="${ay}" y2="${ay}" class="avg"/><polyline points="${pts}"/><g>${samples.filter(p=>p.mistakes).map((p,i)=>`<circle cx="${(i/(samples.length-1||1))*w}" cy="${h-(p.wpm/max)*(h-20)-10}" r="3"/>`).join('')}</g></svg><p class="sr">Speed graph from ${samples[0].time}s to ${samples.at(-1).time}s.</p>`}
+function list(title,items,suffix=''){return`<div class="card"><h3>${title}</h3>${items.length?items.map(i=>`<p><b>${html(i.label)}</b> <span>${i.value}${suffix}</span></p>`).join(''):'<p>Not enough data yet.</p>'}</div>`}
+function renderResults(st){screen.innerHTML=`<section class="results"><p class="eyebrow">${st.mode} complete</p><h1>${st.wpm} wpm</h1><div class="resultGrid">${metric('raw wpm',st.rawWpm)}${metric('accuracy',st.accuracy+'%')}${metric('correct',st.correct)}${metric('incorrect',st.incorrect)}${metric('corrected',st.correctedErrors)}${metric('duration',st.duration+'s')}${metric('words',st.wordsCompleted)}${metric('consistency',st.consistency+'%')}</div>${graph(st.graph,st.wpm)}<p class="observation">${html(st.observation)}</p><div class="insights">${list('Difficult words',st.difficultWords)}${list('Slowest characters',st.slowestCharacters,'ms')}${list('Most mistyped',st.mistypedCharacters)}</div><label>Optional local label<input id="runLabel" maxlength="60" placeholder="chapter three review"/></label><div class="actions"><button class="primary" id="saveRun">Save run</button><button class="ghost" id="discardRun">Discard run</button><button class="ghost" id="tryRun">Try again</button><button class="ghost" id="newRun">New test</button></div><p class="hint">Study contents are not saved to history.</p></section>`; $('#saveRun').onclick=()=>saveRun(st); $('#discardRun').onclick=()=>{session=null; view=st.mode==='study'?'study':'speed'; render()}; $('#tryRun').onclick=()=> st.mode==='speed'?startSpeed(session.duration):begin({mode:'study',target:study.text,duration:study.length,label:study.length?`${study.length}s`:'full document',sourceName:study.name}); $('#newRun').onclick=()=>{view=st.mode==='study'?'study':'speed';render()}}
+function saveRun(st){if(history.runs.length>=MAX_HISTORY){alert('History is full. Delete an older saved run before saving this one.');return} const rec={id:crypto.randomUUID(),createdAt:new Date().toISOString(),...st,sourceName:st.sourceName||'',userLabel:$('#runLabel').value.trim()}; history={version:1,runs:[rec,...history.runs]}; if(save(HISTORY_KEY,history)){session.saved=true; $('#saveRun').disabled=true; $('#saveRun').textContent='Saved'}}
+function renderHistory(){const runs=(history.runs||[]), avg=Math.round(runs.reduce((a,r)=>a+r.wpm,0)/(runs.length||1)), best=Math.max(0,...runs.map(r=>r.wpm)); screen.innerHTML=`<section class="panel"><h1>History</h1><div class="resultGrid">${metric('saved runs',runs.length)}${metric('best wpm',best)}${metric('average wpm',avg)}${metric('avg accuracy',Math.round(runs.reduce((a,r)=>a+r.accuracy,0)/(runs.length||1))+'%')}</div><div class="choices"><button data-filter="all" class="pill active">All</button><button data-filter="speed" class="pill">Speed</button><button data-filter="study" class="pill">Study</button><button id="clearHist" class="ghost">Clear all</button></div><div id="runs"></div></section>`; const draw=f=>$('#runs').innerHTML=runs.filter(r=>f==='all'||r.mode===f).map(r=>`<article class="history"><h3>${html(r.userLabel||r.mode+' run')} <small>${new Date(r.createdAt).toLocaleString()}</small></h3><p>${r.wpm} WPM · ${r.accuracy}% accuracy · ${r.consistency}% consistency · vs avg ${r.wpm-avg>=0?'+':''}${r.wpm-avg}</p>${graph(r.graph||[],r.wpm)}<button data-del="${r.id}" class="ghost">Delete</button></article>`).join('')||'<p class="hint">No saved runs yet.</p>'; draw('all'); screen.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{screen.querySelectorAll('[data-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');draw(b.dataset.filter)}); $('#runs').onclick=e=>{if(e.target.dataset.del){history.runs=history.runs.filter(r=>r.id!==e.target.dataset.del);save(HISTORY_KEY,history);renderHistory()}}; $('#clearHist').onclick=()=>confirm('Clear all saved SlapTap runs?')&&(history={version:1,runs:[]},save(HISTORY_KEY,history),renderHistory())}
+function openSettings(){modal.innerHTML=`<div class="shade"><dialog open><h2>Settings</h2><label>Theme<select id="theme">${['dark','light','wood','opposite','ocean'].map(t=>`<option ${settings.theme===t?'selected':''}>${t}</option>`)}</select></label>${['sound','keyboard','nextKey','liveWpm','liveAccuracy','reducedMotion'].map(k=>`<label><input type="checkbox" id="${k}" ${settings[k]?'checked':''}/> ${k.replace(/[A-Z]/g,m=>' '+m.toLowerCase())}</label>`).join('')}<label>Volume<input id="volume" type="range" min="0" max="1" step=".05" value="${settings.volume}"/></label><button id="resetSet" class="ghost">Reset settings</button><button id="clearSetHist" class="ghost">Clear saved history</button><button id="closeSet" class="primary">Done</button></dialog></div>`; $('#theme').onchange=e=>{settings.theme=e.target.value;save(SETTINGS_KEY,settings);applyTheme()}; ['sound','keyboard','nextKey','liveWpm','liveAccuracy','reducedMotion'].forEach(k=>$(`#${k}`).onchange=e=>{settings[k]=e.target.checked;save(SETTINGS_KEY,settings);applyTheme(); if(session&&k.startsWith('live'))renderRun()}); $('#volume').oninput=e=>{settings.volume=Number(e.target.value);save(SETTINGS_KEY,settings)}; $('#resetSet').onclick=()=>{settings={...defaults};save(SETTINGS_KEY,settings);applyTheme();openSettings()}; $('#clearSetHist').onclick=()=>confirm('Clear saved history?')&&(history={version:1,runs:[]},save(HISTORY_KEY,history)); $('#closeSet').onclick=closeSettings}
+function closeSettings(){modal.innerHTML='';focusInput()}
+function play(kind){if(!settings.sound)return; try{audio??=new (window.AudioContext||window.webkitAudioContext)(); const o=audio.createOscillator(), g=audio.createGain(); o.type='square'; o.frequency.value={char:520,space:390,backspace:260,enter:330}[kind]||520; g.gain.setValueAtTime(settings.volume*.035,audio.currentTime); g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.045); o.connect(g).connect(audio.destination); o.start(); o.stop(audio.currentTime+.05)}catch{}}
+document.body.addEventListener('click',e=>{const b=e.target.closest('[data-view]'); if(b){view=b.dataset.view;session=null;render()}}); $('#settingsButton').onclick=openSettings; render();
