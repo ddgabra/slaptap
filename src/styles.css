@@ -184,7 +184,8 @@ dialog{position:static;margin:0;border:1px solid var(--border);color:var(--text)
   .notes .resultGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
   .stat{padding:.65rem .75rem}
   .stat strong{font-size:1.3rem}
-  .viewport{--fs:clamp(1.15rem,5.4vw,1.5rem);height:calc(var(--fs)*1.6*4 + .7rem);padding:.7rem .8rem 0;border-radius:14px}
+  .viewport{--fs:clamp(1.15rem,5.4vw,1.5rem);height:min(calc(var(--fs)*1.6*4 + .7rem),38dvh);padding:.7rem .8rem 0;border-radius:14px}
+  textarea#typingInput{top:35dvh;bottom:auto}
   .liveStats{margin-bottom:0}
   .keyboard,.kbTop,#keyboardHost{display:none!important}
   .runHead{grid-template-columns:1fr}
