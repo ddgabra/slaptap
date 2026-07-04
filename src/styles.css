@@ -73,3 +73,15 @@ kbd.next{outline:3px solid var(--accent);outline-offset:3px;animation:keyPulse 1
 .dangerBtn:hover{background:color-mix(in srgb,var(--danger) 22%,var(--card));border-color:color-mix(in srgb,var(--danger) 68%,var(--border));transform:translateY(-2px)}
 .runHead{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:.75rem}.cancelTest{min-height:2.35rem;padding:.45rem .75rem;font-size:.85rem;border-color:color-mix(in srgb,var(--danger) 30%,var(--border));color:var(--danger);background:color-mix(in srgb,var(--danger) 8%,var(--card))}
 @media(max-width:720px){.runHead{grid-template-columns:1fr}.cancelTest{justify-self:end}.runHead .liveStats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Theme cohesion pass: keep controls, saved cards, and modals tied to the selected palette */
+button,input,select,textarea,.drop,.preview,.history,.card,.stat,.paste,dialog,.settingsDialog,.activeNote,.testButton{background:linear-gradient(180deg,color-mix(in srgb,var(--card) 90%,var(--panel)),color-mix(in srgb,var(--card) 82%,var(--bg)));border-color:color-mix(in srgb,var(--border) 72%,var(--accent));color:var(--text)}
+button.ghost{background:color-mix(in srgb,var(--panel) 74%,transparent)}
+.primary,.nav .active,.pill.active{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--graph) 35%,var(--accent)));color:color-mix(in srgb,var(--bg) 90%,#111);border-color:color-mix(in srgb,var(--accent) 65%,transparent)}
+.logoMark{background:radial-gradient(circle at 70% 20%,var(--shine) 0 10%,transparent 11%),linear-gradient(145deg,var(--accent),var(--graph) 58%,color-mix(in srgb,var(--accent) 55%,var(--bg)))}
+.actions,.choices,.options{align-items:center}.actions{justify-content:center}.options label,.choices button,.actions button{min-width:min(100%,9.5rem)}
+.drop{text-align:center;color:var(--muted);box-shadow:inset 0 1px var(--shine),0 16px 36px color-mix(in srgb,var(--accent) 10%,transparent)}
+.preview,.history{overflow:hidden}.history h3,.preview strong{color:var(--accent)}
+.settingsDialog{background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 96%,var(--accent) 4%),color-mix(in srgb,var(--panel) 92%,var(--bg)));border-color:color-mix(in srgb,var(--accent) 38%,var(--border))}
+.notePop{color:color-mix(in srgb,var(--bg) 90%,#111)}
+@media(max-width:720px){.actions,.choices,.options{justify-items:stretch}.actions button,.choices button,.options label{width:100%;min-width:0}.settingsActions button{width:100%}}
