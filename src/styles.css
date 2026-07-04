@@ -62,3 +62,7 @@ kbd.next{outline:3px solid var(--accent);outline-offset:3px;animation:keyPulse 1
 /* Global test controls */
 .bottomBar{flex-direction:column;align-items:center;gap:.6rem}.testButton{display:inline-flex;align-items:center;justify-content:center;min-height:2.35rem;padding:.5rem .85rem;border-radius:999px;font-size:.9rem;background:color-mix(in srgb,var(--panel) 88%,transparent);box-shadow:0 10px 28px var(--shadow),inset 0 1px var(--shine)}.testButton:hover{transform:translateY(-2px)}
 @media(max-width:720px){.bottomBar{gap:.5rem}.testButton{min-width:8.5rem}}
+
+/* Notes: one-line input, nested class tabs, and louder visual feedback */
+.notePad{white-space:pre;overflow-x:auto;overflow-y:hidden;color:var(--success);font-weight:1000;text-shadow:0 0 16px color-mix(in srgb,var(--success) 38%,transparent),0 0 32px color-mix(in srgb,var(--accent) 16%,transparent)}
+.notePad::placeholder{color:color-mix(in srgb,var(--success) 55%,var(--muted))}.noteTabs{align-items:flex-start}.noteTabGroup{display:grid;gap:.45rem}.noteTabGroup.current>.pill{box-shadow:0 0 0 3px color-mix(in srgb,var(--success) 34%,transparent),0 12px 30px color-mix(in srgb,var(--accent) 18%,transparent)}.subTabs{display:grid;gap:.4rem;margin-left:1rem;padding-left:.75rem;border-left:2px solid color-mix(in srgb,var(--accent) 45%,var(--border))}.subTabs .pill,.subTabs .ghost{font-size:.9rem;padding:.55rem .7rem}
