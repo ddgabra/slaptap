@@ -22,22 +22,24 @@
           </span>
           <span class="logoText">SlapTap</span>
         </button>
-        <nav class="nav" aria-label="main">
-          <button data-view="speed">Speed</button>
-          <button data-view="study">Study</button>
-          <button data-view="notes">Notes</button>
-          <button data-view="history">History</button>
-        </nav>
-      </header>
-      <section id="screen"></section>
-      <footer class="bottomBar">
-        <button class="ghost testButton" id="testButton" aria-label="Change test" title="Change test">
+        <div class="topActions" aria-label="app tools">
+          <button class="ghost testButton" id="testButton" aria-label="Change test" title="Change test">
           <span>Change test</span>
         </button>
         <button class="ghost settingsGear" id="settingsButton" aria-label="Settings" title="Settings">
           <span aria-hidden="true">⚙</span>
           <span>Settings</span>
         </button>
+        </div>
+      </header>
+      <section id="screen"></section>
+      <footer class="bottomBar">
+        <nav class="nav" aria-label="main">
+          <button data-view="speed">Speed</button>
+          <button data-view="study">Study</button>
+          <button data-view="notes">Notes</button>
+          <button data-view="history">History</button>
+        </nav>
       </footer>
       <textarea id="typingInput" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="typing input"></textarea>
     </main>
