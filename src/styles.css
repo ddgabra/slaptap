@@ -75,6 +75,13 @@ input[type=range]{accent-color:var(--accent);padding:0;border:0;background:trans
 .drop:hover,.drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
 .drop input{max-width:230px}
 
+
+.gameGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.9rem;margin-top:1rem}
+.gameCard{display:grid;gap:.7rem;align-content:start;background:color-mix(in srgb,var(--card) 80%,transparent);border:1px solid var(--border);border-radius:16px;padding:1rem;box-shadow:inset 0 1px var(--shine)}
+.gameCard h2{margin:0;color:var(--accent);font-size:1.2rem}
+.gameCard p{margin:0;color:var(--muted);line-height:1.5}
+.gameCard button{align-self:end;margin-top:.2rem}
+
 /* 5 ── Typing run */
 .runHead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.75rem;align-items:start}
 .cancelTest{min-height:2.3rem;padding:.45rem .85rem;font-size:.85rem;color:var(--danger);border-color:color-mix(in srgb,var(--danger) 30%,var(--border));background:color-mix(in srgb,var(--danger) 7%,transparent)}
@@ -180,7 +187,7 @@ dialog{position:static;margin:0;border:1px solid var(--border);color:var(--text)
   .app{padding:.65rem .6rem 1.2rem}
   .topbar{gap:.6rem;margin-bottom:1rem}
   .brand{justify-self:center}
-  .nav{width:100%;display:grid;grid-template-columns:repeat(4,1fr);padding:.25rem}
+  .nav{width:100%;display:grid;grid-template-columns:repeat(5,1fr);padding:.25rem}
   .nav button{padding:.6rem .3rem;font-size:.9rem;white-space:nowrap}
   .panel,.run,.results{border-radius:18px;padding:.95rem}
   .hero h1,.panel h1{font-size:clamp(1.7rem,7vw,2.3rem)}
